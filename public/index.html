@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Live feed of scraped political-development items." />
+  <title>Policy Monitoring</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">📊</span>
+        <div>
+          <h1>Policy Monitoring</h1>
+          <p class="tagline">Political developments, scraped and aggregated</p>
+        </div>
+      </div>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Toggle color theme">
+        <span class="theme-icon" aria-hidden="true">🌗</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="toolbar" aria-label="Feed controls">
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">🔎</span>
+        <input id="search" type="search" placeholder="Filter items…" autocomplete="off" aria-label="Filter items by text" />
+      </div>
+      <div class="filters">
+        <label class="visually-hidden" for="source-filter">Filter by source</label>
+        <select id="source-filter" aria-label="Filter by source">
+          <option value="">All sources</option>
+        </select>
+        <button id="refresh" class="btn" type="button">
+          <span class="btn-icon" aria-hidden="true">↻</span> Refresh
+        </button>
+      </div>
+    </section>
+
+    <p id="meta" class="meta" aria-live="polite"></p>
+
+    <div id="status" class="status" role="status" aria-live="polite">
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Loading latest scrape…</p>
+    </div>
+
+    <ul id="feed" class="feed" hidden></ul>
+
+    <div id="empty" class="empty" hidden>
+      <p class="empty-emoji" aria-hidden="true">🗳️</p>
+      <h2>Nothing here yet</h2>
+      <p>No items matched, or the scraper hasn't published any data to the store yet.</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <p>Data served from Netlify Blobs · refreshed by a scheduled scrape.
+        <a href="https://github.com/streetspirit83/policy-monitoring" rel="noopener">Source</a>
+      </p>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
