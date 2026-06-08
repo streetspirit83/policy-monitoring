@@ -1,0 +1,14 @@
+[
+  {
+    "id": "example-source",
+    "name": "Example Government News Page",
+    "url": "https://example.com/news",
+    "selectors": {
+      "item": "article.news-item",
+      "title": "h2",
+      "link": "a",
+      "date": "time",
+      "summary": "p.summary"
+    }
+  }
+]

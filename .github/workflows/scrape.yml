@@ -1,0 +1,35 @@
+name: Scrape political-development sources
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run scraper
+        run: npm run scrape
+
+      - name: Push result to Netlify Blobs
+        env:
+          POLICY_MONITORING_INGEST_SECRET: ${{ secrets.POLICY_MONITORING_INGEST_SECRET }}
+          INGEST_URL: ${{ secrets.POLICY_MONITORING_INGEST_URL }}
+        run: |
+          curl -sS -f -X POST "$INGEST_URL" \
+            -H "Content-Type: application/json" \
+            -H "x-deploy-secret: ${POLICY_MONITORING_INGEST_SECRET}" \
+            --data-binary @result.json
