@@ -1,0 +1,14 @@
+{
+  "name": "policy-monitoring",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Scrapes political-development sources and persists results via Netlify Blobs",
+  "scripts": {
+    "scrape": "node scripts/scrape.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.0.0",
+    "cheerio": "^1.0.0"
+  }
+}
