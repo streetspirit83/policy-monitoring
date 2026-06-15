@@ -311,7 +311,9 @@
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────
 const BT_BASE  = 'https://bundestag.api.proxy.bund.dev';
-const LR_BASE  = 'https://www.lobbyregister.bundestag.de';
+// The lobby register host rejects cross-origin browser requests (403 / no CORS),
+// so we go through our own Netlify Function proxy instead of calling it directly.
+const LR_BASE  = '/api/lobbyregister';
 const PAGE_SIZE = 10;
 
 // ── TABS ─────────────────────────────────────────────────────────────────
@@ -352,7 +354,7 @@ async function searchLobby() {
   lobbyPage = 0;
 
   try {
-    const url = new URL(`${LR_BASE}/sucheDetailJson`);
+    const url = new URL(LR_BASE, window.location.origin);
     if (q) url.searchParams.set('q', q);
     url.searchParams.set('sort', sort);
 
@@ -620,7 +622,7 @@ function empty(msg) {
 function errorBox(err) {
   return `<div class="error-box">
     <strong>Fehler beim Laden der Daten:</strong> ${esc(String(err))}<br>
-    <small>Möglicherweise blockiert der Browser die Anfrage (CORS). Die Bundestag-API benötigt den Proxy unter <code>bundestag.api.proxy.bund.dev</code>.</small>
+    <small>Die Lobbyregister-Suche läuft über den Proxy <code>/api/lobbyregister</code>; die Bundestag-API über <code>bundestag.api.proxy.bund.dev</code>. Diese Seite muss dafür über das Netlify-Deployment (nicht per <code>file://</code>) geöffnet werden.</small>
   </div>`;
 }
 
