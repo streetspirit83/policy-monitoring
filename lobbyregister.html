@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bundestag Suche</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #1a1a1a;
+      --grey-dark: #444;
+      --grey: #888;
+      --grey-light: #ddd;
+      --bg: #f5f5f5;
+      --white: #fff;
+      --blue: #003366;
+      --blue-light: #1a5799;
+      --gold: #c8a951;
+      --accent: #e8f0fb;
+      --radius: 8px;
+      --shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--black);
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--blue);
+      color: var(--white);
+      padding: 20px 24px 0;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: .3px;
+    }
+    header p {
+      font-size: .85rem;
+      opacity: .75;
+      margin-top: 4px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-top: 20px;
+    }
+    .tab {
+      padding: 10px 20px;
+      border: none;
+      background: rgba(255,255,255,.15);
+      color: rgba(255,255,255,.8);
+      border-radius: var(--radius) var(--radius) 0 0;
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 500;
+      transition: background .15s, color .15s;
+    }
+    .tab:hover { background: rgba(255,255,255,.25); color: var(--white); }
+    .tab.active { background: var(--bg); color: var(--blue); font-weight: 700; }
+
+    main { padding: 24px; max-width: 900px; }
+
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .search-bar input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 2px solid var(--grey-light);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color .15s;
+      background: var(--white);
+    }
+    .search-bar input:focus { border-color: var(--blue-light); }
+    .search-bar button {
+      padding: 10px 22px;
+      background: var(--blue);
+      color: var(--white);
+      border: none;
+      border-radius: var(--radius);
+      font-size: .95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .search-bar button:hover { background: var(--blue-light); }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .controls label { font-size: .85rem; color: var(--grey-dark); }
+    .controls select {
+      padding: 6px 10px;
+      border: 1px solid var(--grey-light);
+      border-radius: 6px;
+      font-size: .85rem;
+      background: var(--white);
+      cursor: pointer;
+    }
+    .result-count {
+      margin-left: auto;
+      font-size: .85rem;
+      color: var(--grey);
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    #results { display: flex; flex-direction: column; gap: 12px; }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px 20px;
+      border-left: 4px solid var(--blue);
+    }
+    .card.lobby { border-left-color: var(--gold); }
+    .card.committee { border-left-color: #2e8b57; }
+
+    .card-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .card-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--blue);
+    }
+    .card.lobby .card-title { color: #7a5e00; }
+    .card.committee .card-title { color: #1a6b3c; }
+    .badge {
+      font-size: .72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: var(--blue);
+      white-space: nowrap;
+    }
+    .badge.gold { background: #fdf3d0; color: #7a5e00; }
+    .badge.green { background: #e6f4ec; color: #1a6b3c; }
+
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      font-size: .82rem;
+      color: var(--grey-dark);
+      margin-top: 4px;
+    }
+    .card-meta span { display: flex; align-items: center; gap: 4px; }
+    .card-meta .icon { font-size: .9em; }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .tag {
+      font-size: .72rem;
+      padding: 2px 8px;
+      background: var(--bg);
+      border-radius: 10px;
+      color: var(--grey-dark);
+      border: 1px solid var(--grey-light);
+    }
+
+    .description {
+      font-size: .82rem;
+      color: var(--grey-dark);
+      margin-top: 6px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--grey);
+      font-size: .95rem;
+    }
+    .empty .icon { font-size: 2.5rem; display: block; margin-bottom: 12px; }
+
+    .spinner {
+      display: none;
+      text-align: center;
+      padding: 40px;
+      color: var(--grey);
+      font-size: .9rem;
+    }
+    .spinner.visible { display: block; }
+
+    .error-box {
+      background: #fff0f0;
+      border: 1px solid #ffcccc;
+      border-radius: var(--radius);
+      padding: 14px 18px;
+      color: #c00;
+      font-size: .85rem;
+    }
+
+    .load-more {
+      display: none;
+      margin-top: 16px;
+      width: 100%;
+      padding: 10px;
+      background: var(--white);
+      border: 2px solid var(--grey-light);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--grey-dark);
+      transition: border-color .15s;
+    }
+    .load-more:hover { border-color: var(--blue); color: var(--blue); }
+    .load-more.visible { display: block; }
+
+    @media (max-width: 600px) {
+      main { padding: 16px; }
+      .tab { padding: 8px 14px; font-size: .82rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🏛 Bundestag Suche</h1>
+  <p>Lobbyregister · Abgeordnete · Ausschüsse</p>
+  <nav class="tabs">
+    <button class="tab active" data-tab="lobby">Lobbyregister</button>
+    <button class="tab" data-tab="mdb">Abgeordnete</button>
+    <button class="tab" data-tab="committee">Ausschüsse</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ── LOBBYREGISTER ── -->
+  <div class="panel active" id="panel-lobby">
+    <div class="search-bar">
+      <input id="lobby-input" type="search" placeholder="Organisation, Unternehmen, Thema …" autocomplete="off">
+      <button onclick="searchLobby()">Suchen</button>
+    </div>
+    <div class="controls">
+      <label for="lobby-sort">Sortierung</label>
+      <select id="lobby-sort" onchange="searchLobby()">
+        <option value="REGISTRATION_DESC">Neueste zuerst</option>
+        <option value="REGISTRATION_ASC">Älteste zuerst</option>
+        <option value="NAME_ASC">Name A–Z</option>
+        <option value="NAME_DESC">Name Z–A</option>
+        <option value="NUMBEROFEMPLOYEES_DESC">Meiste Mitarbeiter</option>
+        <option value="FINANCIALEXPENSES_DESC">Höchste Ausgaben</option>
+      </select>
+      <span class="result-count" id="lobby-count"></span>
+    </div>
+    <div class="spinner" id="lobby-spinner">Suche läuft …</div>
+    <div id="lobby-results"></div>
+    <button class="load-more" id="lobby-more" onclick="loadMoreLobby()">Weitere Ergebnisse laden</button>
+  </div>
+
+  <!-- ── ABGEORDNETE ── -->
+  <div class="panel" id="panel-mdb">
+    <div class="search-bar">
+      <input id="mdb-input" type="search" placeholder="Name des Abgeordneten …" autocomplete="off">
+      <button onclick="searchMdb()">Suchen</button>
+    </div>
+    <div class="controls">
+      <span class="result-count" id="mdb-count"></span>
+    </div>
+    <div class="spinner" id="mdb-spinner">Lade Abgeordnetenliste …</div>
+    <div id="mdb-results"></div>
+  </div>
+
+  <!-- ── AUSSCHÜSSE ── -->
+  <div class="panel" id="panel-committee">
+    <div class="search-bar">
+      <input id="committee-input" type="search" placeholder="Name des Ausschusses …" autocomplete="off">
+      <button onclick="searchCommittee()">Suchen</button>
+    </div>
+    <div class="controls">
+      <span class="result-count" id="committee-count"></span>
+    </div>
+    <div class="spinner" id="committee-spinner">Lade Ausschussliste …</div>
+    <div id="committee-results"></div>
+  </div>
+
+</main>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────
+const BT_BASE  = 'https://bundestag.api.proxy.bund.dev';
+const LR_BASE  = 'https://www.lobbyregister.bundestag.de';
+const PAGE_SIZE = 10;
+
+// ── TABS ─────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ── ENTER KEY ─────────────────────────────────────────────────────────────
+['lobby-input', 'mdb-input', 'committee-input'].forEach((id, i) => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') [searchLobby, searchMdb, searchCommittee][i]();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LOBBY REGISTER
+// ═══════════════════════════════════════════════════════════════════════════
+let lobbyAllResults = [];
+let lobbyPage = 0;
+
+async function searchLobby() {
+  const q    = document.getElementById('lobby-input').value.trim();
+  const sort = document.getElementById('lobby-sort').value;
+  const spinner = document.getElementById('lobby-spinner');
+  const countEl = document.getElementById('lobby-count');
+  const resultsEl = document.getElementById('lobby-results');
+  const moreBtn = document.getElementById('lobby-more');
+
+  spinner.classList.add('visible');
+  resultsEl.innerHTML = '';
+  countEl.textContent = '';
+  moreBtn.classList.remove('visible');
+  lobbyPage = 0;
+
+  try {
+    const url = new URL(`${LR_BASE}/sucheDetailJson`);
+    if (q) url.searchParams.set('q', q);
+    url.searchParams.set('sort', sort);
+
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    lobbyAllResults = data.results || [];
+    const total = data.resultCount || lobbyAllResults.length;
+    countEl.textContent = `${total.toLocaleString('de')} Einträge`;
+
+    if (!lobbyAllResults.length) {
+      resultsEl.innerHTML = empty('Keine Einträge gefunden');
+    } else {
+      renderLobbyPage();
+    }
+  } catch (err) {
+    resultsEl.innerHTML = errorBox(err);
+  } finally {
+    spinner.classList.remove('visible');
+  }
+}
+
+function renderLobbyPage() {
+  const resultsEl = document.getElementById('lobby-results');
+  const moreBtn   = document.getElementById('lobby-more');
+  const slice = lobbyAllResults.slice(lobbyPage * PAGE_SIZE, (lobbyPage + 1) * PAGE_SIZE);
+
+  slice.forEach(entry => {
+    const detail   = entry.registerEntryDetail || {};
+    const identity = detail.lobbyistIdentity   || {};
+    const regNum   = entry.registerNumber      || '';
+    const name     = identity.name             || 'Unbekannt';
+    const activity = detail.activity           || {};
+    const actDe    = activity.de               || '';
+    const emp      = detail.employeeCount      || {};
+    const fin      = detail.financialExpensesEuro;
+    const fields   = (detail.fieldsOfInterest  || []).slice(0, 5);
+    const desc     = detail.activityDescription || '';
+    const websites = identity.websites          || [];
+    const addr     = identity.address           || {};
+
+    let meta = [];
+    if (regNum)  meta.push(`<span><span class="icon">🔖</span>${regNum}</span>`);
+    if (emp.from !== undefined) meta.push(`<span><span class="icon">👥</span>${emp.from}–${emp.to} Mitarbeiter</span>`);
+    if (fin) meta.push(`<span><span class="icon">💶</span>${fmt(fin.from)}–${fmt(fin.to)} €/Jahr</span>`);
+    if (addr.city) meta.push(`<span><span class="icon">📍</span>${addr.city}</span>`);
+    if (websites[0]) meta.push(`<span><span class="icon">🌐</span><a href="${esc(websites[0])}" target="_blank" rel="noopener">${esc(websites[0].replace(/^https?:\/\//, ''))}</a></span>`);
+
+    const tags = fields.map(f => `<span class="tag">${esc(f.de || f.code || '')}</span>`).join('');
+
+    const card = document.createElement('div');
+    card.className = 'card lobby';
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-title">${esc(name)}</span>
+        ${actDe ? `<span class="badge gold">${esc(actDe)}</span>` : ''}
+      </div>
+      ${meta.length ? `<div class="card-meta">${meta.join('')}</div>` : ''}
+      ${desc ? `<p class="description">${esc(desc)}</p>` : ''}
+      ${tags ? `<div class="tags">${tags}</div>` : ''}
+    `;
+    document.getElementById('lobby-results').appendChild(card);
+  });
+
+  lobbyPage++;
+  moreBtn.classList.toggle('visible', lobbyPage * PAGE_SIZE < lobbyAllResults.length);
+}
+
+function loadMoreLobby() { renderLobbyPage(); }
+
+function fmt(n) {
+  if (n === undefined || n === null) return '?';
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + ' Mio.';
+  if (n >= 1_000)     return (n / 1_000).toFixed(0)     + '.000';
+  return n.toString();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ABGEORDNETE (MdBs)
+// ═══════════════════════════════════════════════════════════════════════════
+let mdbAll = [];
+let mdbLoaded = false;
+
+async function loadMdbData() {
+  if (mdbLoaded) return;
+  const spinner = document.getElementById('mdb-spinner');
+  spinner.classList.add('visible');
+  try {
+    const res = await fetch(`${BT_BASE}/xml/v2/mdb/index.xml`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const doc  = new DOMParser().parseFromString(text, 'application/xml');
+
+    mdbAll = [];
+    doc.querySelectorAll('MDB').forEach(node => {
+      const id      = txt(node, 'ID');
+      const name    = txt(node, 'NAMEN NAME') || txt(node, 'NAME');
+      const nname   = txt(node, 'NACHNAME') || txt(node, 'NAMEN NAME NACHNAME');
+      const vname   = txt(node, 'VORNAME')  || txt(node, 'NAMEN NAME VORNAME');
+      const partei  = txt(node, 'PARTEI_KURZ') || txt(node, 'BIOGRAFISCHE_ANGABEN PARTEI_KURZ');
+      const fraktion = txt(node, 'WAHLPERIODEN WAHLPERIODE FRAKTION') || txt(node, 'FRAKTION');
+      const gebiet  = txt(node, 'WAHLPERIODEN WAHLPERIODE WAHLKREIS_NAME') || '';
+
+      const fullName = (vname && nname) ? `${vname} ${nname}` : (name || '');
+      if (fullName) {
+        mdbAll.push({ id, fullName, partei, fraktion, gebiet });
+      }
+    });
+
+    mdbLoaded = true;
+    document.getElementById('mdb-count').textContent = `${mdbAll.length} Abgeordnete geladen`;
+  } catch (err) {
+    document.getElementById('mdb-results').innerHTML = errorBox(err);
+  } finally {
+    spinner.classList.remove('visible');
+  }
+}
+
+async function searchMdb() {
+  await loadMdbData();
+  const q = document.getElementById('mdb-input').value.trim().toLowerCase();
+  const resultsEl = document.getElementById('mdb-results');
+  const countEl   = document.getElementById('mdb-count');
+
+  const matches = q
+    ? mdbAll.filter(m => m.fullName.toLowerCase().includes(q) ||
+                         (m.partei   || '').toLowerCase().includes(q) ||
+                         (m.fraktion || '').toLowerCase().includes(q) ||
+                         (m.gebiet   || '').toLowerCase().includes(q))
+    : mdbAll;
+
+  countEl.textContent = `${matches.length} Ergebnis${matches.length !== 1 ? 'se' : ''}`;
+  resultsEl.innerHTML = '';
+
+  if (!matches.length) {
+    resultsEl.innerHTML = empty('Keine Abgeordneten gefunden');
+    return;
+  }
+
+  matches.slice(0, 50).forEach(m => {
+    let meta = [];
+    if (m.fraktion) meta.push(`<span><span class="icon">🏛</span>${esc(m.fraktion)}</span>`);
+    if (m.gebiet)   meta.push(`<span><span class="icon">📍</span>${esc(m.gebiet)}</span>`);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-title">${esc(m.fullName)}</span>
+        ${m.partei ? `<span class="badge">${esc(m.partei)}</span>` : ''}
+      </div>
+      ${meta.length ? `<div class="card-meta">${meta.join('')}</div>` : ''}
+      ${m.id ? `<div class="card-meta" style="margin-top:6px"><span style="font-size:.75rem;color:var(--grey)">MdB-ID: ${esc(m.id)}</span></div>` : ''}
+    `;
+    resultsEl.appendChild(card);
+  });
+
+  if (matches.length > 50) {
+    const note = document.createElement('p');
+    note.style.cssText = 'text-align:center;color:var(--grey);font-size:.82rem;margin-top:12px';
+    note.textContent = `… und ${matches.length - 50} weitere. Bitte Suche verfeinern.`;
+    resultsEl.appendChild(note);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AUSSCHÜSSE
+// ═══════════════════════════════════════════════════════════════════════════
+let committeeAll = [];
+let committeeLoaded = false;
+
+async function loadCommitteeData() {
+  if (committeeLoaded) return;
+  const spinner = document.getElementById('committee-spinner');
+  spinner.classList.add('visible');
+  try {
+    const res = await fetch(`${BT_BASE}/xml/v2/ausschuesse/index.xml`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    const doc  = new DOMParser().parseFromString(text, 'application/xml');
+
+    committeeAll = [];
+    // Try multiple element name patterns
+    const containers = doc.querySelectorAll('AUSSCHUSS, GREMIUM, COMMITTEE');
+    containers.forEach(node => {
+      const id   = txt(node, 'AUSSCHUSS_ID') || txt(node, 'ID') || node.getAttribute('ID') || '';
+      const name = txt(node, 'BEZEICHNUNG')  || txt(node, 'NAME') || txt(node, 'TITEL') || '';
+      const type = txt(node, 'TYP') || '';
+      const wp   = txt(node, 'WAHLPERIODE') || '';
+      const url  = txt(node, 'LINK') || txt(node, 'URL') || '';
+      if (name) committeeAll.push({ id, name, type, wp, url });
+    });
+
+    committeeLoaded = true;
+    document.getElementById('committee-count').textContent = `${committeeAll.length} Ausschüsse geladen`;
+  } catch (err) {
+    document.getElementById('committee-results').innerHTML = errorBox(err);
+  } finally {
+    spinner.classList.remove('visible');
+  }
+}
+
+async function searchCommittee() {
+  await loadCommitteeData();
+  const q = document.getElementById('committee-input').value.trim().toLowerCase();
+  const resultsEl = document.getElementById('committee-results');
+  const countEl   = document.getElementById('committee-count');
+
+  const matches = q
+    ? committeeAll.filter(c => c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q))
+    : committeeAll;
+
+  countEl.textContent = `${matches.length} Ergebnis${matches.length !== 1 ? 'se' : ''}`;
+  resultsEl.innerHTML = '';
+
+  if (!matches.length) {
+    resultsEl.innerHTML = empty('Keine Ausschüsse gefunden');
+    return;
+  }
+
+  matches.forEach(c => {
+    let meta = [];
+    if (c.wp)   meta.push(`<span><span class="icon">🗓</span>${esc(c.wp)}. Wahlperiode</span>`);
+    if (c.type) meta.push(`<span><span class="icon">📋</span>${esc(c.type)}</span>`);
+
+    const card = document.createElement('div');
+    card.className = 'card committee';
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="card-title">${esc(c.name)}</span>
+        ${c.id ? `<span class="badge green">ID: ${esc(c.id)}</span>` : ''}
+      </div>
+      ${meta.length ? `<div class="card-meta">${meta.join('')}</div>` : ''}
+      ${c.url ? `<div class="card-meta" style="margin-top:6px"><span class="icon">🔗</span><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a></span></div>` : ''}
+    `;
+    resultsEl.appendChild(card);
+  });
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function txt(node, selector) {
+  // Support nested selectors like "NAMEN NAME NACHNAME"
+  const parts = selector.trim().split(/\s+/);
+  let current = node;
+  for (const part of parts) {
+    current = current.querySelector(part);
+    if (!current) return '';
+  }
+  return (current.textContent || '').trim();
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function empty(msg) {
+  return `<div class="empty"><span class="icon">🔍</span>${msg}</div>`;
+}
+
+function errorBox(err) {
+  return `<div class="error-box">
+    <strong>Fehler beim Laden der Daten:</strong> ${esc(String(err))}<br>
+    <small>Möglicherweise blockiert der Browser die Anfrage (CORS). Die Bundestag-API benötigt den Proxy unter <code>bundestag.api.proxy.bund.dev</code>.</small>
+  </div>`;
+}
+
+// ── INIT: Load lobby results on startup ──────────────────────────────────
+searchLobby();
+</script>
+</body>
+</html>
